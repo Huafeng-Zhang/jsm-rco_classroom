@@ -1,0 +1,91 @@
+# Questions:
+ # Why tables quiz_category, quiz_prerequisite have no data?
+
+What is in that table?
+
+mysql> desc wpt1_wp_pro_quiz_category;
++---------------+------------------+------+-----+---------+----------------+
+  | Field         | Type             | Null | Key | Default | Extra          |
+  +---------------+------------------+------+-----+---------+----------------+
+  | category_id   | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
+  | category_name | varchar(200)     | NO   |     | NULL    |                |
+  +---------------+------------------+------+-----+---------+----------------+
+Looks like we don't use the ability to have categories for quizzes. Not sure what categories would do...
+
+==============================
+ # quiz_lock: why my account are not in quiz_lock and quiz_toplist tables?
+
+Not quite clear what lock is, but looks like it's some way of restricting access. Weird looking data in the table, but I'm pretty sure we won't care for our purposes.
+
+Maybe you're not in the top scorers? Checking the contents, it looks like this is only maintained for 2 quizzes, which you probably haven't taken yet.
+
+mysql> select quiz_id, count(*) from wpt1_wp_pro_quiz_toplist group by quiz_id;
++---------+----------+
+| quiz_id | count(*) |
++---------+----------+
+|      18 |      188 |
+|     169 |      722 |
++---------+----------+
+2 rows in set (0.01 sec)
+
+mysql> select name from wpt1_wp_pro_quiz_master where id in (18,169);
++----------------------------------+
+| name                             |
++----------------------------------+
+| Final Citizenship Practice Quiz  |
+| GED Social Studies practice test |
++----------------------------------+
+2 rows in set (0.00 sec)
+
+==============================
+ # quiz_statistic_ref: what is statistic_ref_id?
+
+A foreign key to link various stats. For example:
+
+mysql> select * from wpt1_wp_pro_quiz_statistic where statistic_ref_id=25;
++------------------+-------------+---------------+-----------------+------------+--------+---------------+------------------+
+| statistic_ref_id | question_id | correct_count | incorrect_count | hint_count | points | question_time | answer_data      |
++------------------+-------------+---------------+-----------------+------------+--------+---------------+------------------+
+|               25 |         225 |             1 |               0 |          0 |      1 |             3 | ["freedom"]      |
+|               25 |         227 |             1 |               0 |          0 |      1 |             4 | ["africans"]     |
+|               25 |         249 |             0 |               1 |          0 |      0 |             3 | [1,0,0,0,0]      |
+|               25 |         251 |             1 |               0 |          0 |      1 |             5 | ["civil rights"] |
+|               25 |         260 |             1 |               0 |          0 |      1 |             4 | ["montana"]      |
+|               25 |         262 |             1 |               0 |          0 |      1 |             3 | [0,1,0,0]        |
+|               25 |         272 |             1 |               0 |          0 |      1 |             4 | [0,0,1,0]        |
+|               25 |         294 |             1 |               0 |          0 |      1 |             2 | [0,0,0,0,1]      |
+|               25 |         301 |             1 |               0 |          0 |      1 |             2 | [1,0]            |
+|               25 |         315 |             1 |               0 |          0 |      1 |             7 | [0,0,0,1]        |
++------------------+-------------+---------------+-----------------+------------+--------+---------------+------------------+
+
+and that particular statistic_ref_id refers to a single user taking a single quiz. Looks like various questions for that quiz:
+
+mysql> select * from wpt1_wp_pro_quiz_statistic_ref where statistic_ref_id=25;
++------------------+---------+---------+-------------+--------+-----------+
+| statistic_ref_id | quiz_id | user_id | create_time | is_old | form_data |
++------------------+---------+---------+-------------+--------+-----------+
+|               25 |      18 |      68 |  1457645484 |      0 | NULL      |
++------------------+---------+---------+-------------+--------+-----------+
+
+==============================
+ # I do not think we will need post table. (or what are the uses of post table in your mind?)
+
+It's where the "essay" long form text answers are stored:
+
+mysql> select post_content from wpt1_posts where post_type='sfwd-essays' limit 4;
++----------------------------------------------------------------------------------+
+| post_content                                                                     |
++----------------------------------------------------------------------------------+
+| Yes, I think it is a good idea because then the President can't be too powerful. |
+| education
+employment
+integration                                               |
+| excited                                                                          |
+| transportation
+language                                                         |
++----------------------------------------------------------------------------------+
+
+==============================
+ # I did not find timespent variable in any of the quiz tables.
+
+I think 'question_time' in the table above is the time in seconds to answer the question.
